@@ -6,6 +6,11 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.46.7-c1.0] - 2026-11-09
+
+### Changed
+- n8n updated to 2.46.7.
+
 ## [2.46.6-c1.0] - 2026-11-05
 
 ### Changed
