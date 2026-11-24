@@ -69,10 +69,22 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add Dockerfile CHANGELOG.md
           git commit -m "chore: bump n8n to ${LATEST}"
-          git tag -a "v${version}" -m "v${version}"
           git push origin HEAD:main
-          # Тег пушим отдельной командой: иначе событие push тега теряется.
-          git push origin "v${version}"
+
+          # WHY: git push тега из бота иногда падает на серверной стороне
+          # ("--stdin requires a git repository"); создаём аннотированный тег
+          # через GitHub API и отдельно запускаем release workflow.
+          TAG_SHA=$(curl -fsS -X POST \
+            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/git/tags" \
+            -d "{\"tag\":\"v${version}\",\"message\":\"v${version}\",\"object\":\"$(git rev-parse HEAD)\",\"type\":\"commit\"}" \
+            | jq -r .sha)
+          curl -fsS -X POST \
+            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/git/refs" \
+            -d "{\"ref\":\"refs/tags/v${version}\",\"sha\":\"${TAG_SHA}\"}"
 
           # Пуш тега ботом через GITHUB_TOKEN не запускает workflow (защита
           # GitHub от рекурсии), поэтому сборку релиза запускаем явно.
